@@ -42,7 +42,7 @@ export const stopBackgroundMusic = () => {
 
 export const isBackgroundMusicEnabled = () => musicEnabled;
 
-export const playSound = (effect: SoundEffect, volume = 0.7) => {
+export const playSound = (effect: SoundEffect, volume = 0.62) => {
   const audio = new Audio(sfxMap[effect]);
   audio.volume = volume;
   audio.play().catch(() => undefined);

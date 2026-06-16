@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { MascotWithBubble } from "./shared/Mascot";
 import { FloatingClouds } from "./shared/FloatingDecor";
+import { MoneyVisual } from "./MoneyVisual";
+import { MONEY_ASSETS } from "./moneyAssets";
+import { playSound } from "../audioManager";
 
 interface MengenalRupiahScreenProps {
   avatar: "boy" | "girl";
@@ -159,17 +162,103 @@ const BANKNOTES = [
   },
 ];
 
+interface CoinDetail {
+  value: string;
+  numValue: number;
+  bgColor: string;
+  accentColor: string;
+  hero: string;
+  heroDesc: string;
+  material: string;
+  shape: string;
+  weight: string;
+  diameter: string;
+  thickness: string;
+  edge: string;
+  frontDesign: string;
+  backDesign: string;
+  year: string;
+  fact: string;
+  sourceUrl: string;
+}
+
+// Accurate TE 2016 coin data sourced from Bank Indonesia (bi.go.id).
+const COIN_DETAILS: CoinDetail[] = [
+  {
+    value: "Rp 100",
+    numValue: 100,
+    bgColor: "#8F98A8",
+    accentColor: "#D7DBE2",
+    hero: "Prof. Dr. Ir. Herman Johannes",
+    heroDesc: "Pahlawan Nasional dari Nusa Tenggara Timur",
+    material: "Aluminium",
+    shape: "Bulat",
+    weight: "1,79 gram",
+    diameter: "23,00 mm",
+    thickness: "2,00 mm",
+    edge: "Rata",
+    frontDesign: "Garuda Pancasila, teks REPUBLIK INDONESIA, dan gambar Prof. Dr. Ir. Herman Johannes.",
+    backDesign: "Nominal 100, teks BANK INDONESIA, dan tahun emisi 2016.",
+    year: "2016",
+    fact: "Herman Johannes dikenal sebagai ilmuwan dan pejuang kemerdekaan. Koin Rp100 TE 2016 berbahan aluminium dan berwarna perak.",
+    sourceUrl: "https://www.bi.go.id/id/rupiah/gambar-uang/Detail-Uang.aspx?Bahan=Logam&ID=1",
+  },
+  {
+    value: "Rp 200",
+    numValue: 200,
+    bgColor: "#9AA8BA",
+    accentColor: "#E7EDF4",
+    hero: "Dr. Tjipto Mangoenkoesoemo",
+    heroDesc: "Tokoh pergerakan nasional Indonesia",
+    material: "Aluminium",
+    shape: "Bulat",
+    weight: "2,38 gram",
+    diameter: "25,00 mm",
+    thickness: "2,20 mm",
+    edge: "Rata",
+    frontDesign: "Garuda Pancasila, teks REPUBLIK INDONESIA, dan gambar Dr. Tjipto Mangoenkoesoemo.",
+    backDesign: "Nominal 200, teks BANK INDONESIA, dan tahun emisi 2016.",
+    year: "2016",
+    fact: "Tjipto Mangoenkoesoemo adalah tokoh Tiga Serangkai yang berperan penting dalam pergerakan nasional Indonesia.",
+    sourceUrl: "https://www.bi.go.id/id/rupiah/gambar-uang/Detail-Uang.aspx?Bahan=Logam&ID=2",
+  },
+  {
+    value: "Rp 500",
+    numValue: 500,
+    bgColor: "#B7822F",
+    accentColor: "#F2D27D",
+    hero: "Letjen TNI T. B. Simatupang",
+    heroDesc: "Pahlawan Nasional dan tokoh militer Indonesia",
+    material: "Aluminium",
+    shape: "Bulat",
+    weight: "3,10 gram",
+    diameter: "27,20 mm",
+    thickness: "2,35 mm",
+    edge: "Rata",
+    frontDesign: "Garuda Pancasila, teks REPUBLIK INDONESIA, dan gambar Letjen TNI T. B. Simatupang.",
+    backDesign: "Nominal 500, teks BANK INDONESIA, dan tahun emisi 2016.",
+    year: "2016",
+    fact: "T. B. Simatupang adalah tokoh militer dan pemikir strategis Indonesia. Koin Rp500 penting untuk transaksi dengan nominal lima ratus rupiah.",
+    sourceUrl: "https://www.bi.go.id/id/rupiah/gambar-uang/Detail-Uang.aspx?Bahan=Logam&ID=3",
+  },
+];
+
 export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRupiahScreenProps) {
   const [selected, setSelected] = useState<number | null>(null);
+  const [selectedCoin, setSelectedCoin] = useState<number | null>(null);
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [viewed, setViewed] = useState<Set<number>>(new Set());
+  const [coinViewed, setCoinViewed] = useState<Set<number>>(new Set());
   const [showingBack, setShowingBack] = useState<Set<number>>(new Set());
+  const coins = MONEY_ASSETS.filter((money) => money.kind === "coin");
 
   const handleBillClick = (i: number) => {
     if (flipped.has(i)) return;
+    playSound("money", 0.45);
     setFlipped(new Set([...flipped, i]));
     setViewed(new Set([...viewed, i]));
     setSelected(i);
+    setSelectedCoin(null);
 
     const isBack = showingBack.has(i);
     if (isBack) {
@@ -187,12 +276,25 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
     }, 700);
   };
 
+  const handleCoinClick = (value: number) => {
+    playSound("money", 0.45);
+    setSelected(null);
+    setSelectedCoin(value);
+    setCoinViewed(new Set([...coinViewed, value]));
+  };
+
+  const selectedCoinDetail = selectedCoin ? COIN_DETAILS.find((coin) => coin.numValue === selectedCoin) : null;
+  const totalItems = BANKNOTES.length + coins.length;
+  const viewedItems = viewed.size + coinViewed.size;
+
   const mascotText =
     selected !== null
       ? BANKNOTES[selected].fact
-      : "Klik uangnya untuk melihat fakta seru! Yuk kenali semua pecahan Rupiah! 🎉";
+      : selectedCoinDetail
+      ? selectedCoinDetail.fact
+      : "Klik uang kertas atau koin untuk melihat fakta seru! Yuk kenali semua pecahan Rupiah!";
 
-  const progressPct = Math.round((viewed.size / BANKNOTES.length) * 100);
+  const progressPct = Math.round((viewedItems / totalItems) * 100);
 
   return (
     <div
@@ -242,7 +344,7 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
                 marginBottom: 3,
               }}
             >
-              Progress: {viewed.size}/{BANKNOTES.length}
+              Progress: {viewedItems}/{totalItems}
             </div>
             <div
               style={{
@@ -307,15 +409,57 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
             ))}
           </div>
 
+          <div
+            style={{
+              background: "rgba(255,255,255,0.9)",
+              border: "3px solid #4A148C",
+              borderRadius: 18,
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              flexShrink: 0,
+              boxShadow: "4px 4px 0 #3D1A78",
+            }}
+          >
+            <div style={{ fontFamily: "Fredoka One, cursive", color: "#2D1B69", minWidth: 132 }}>
+              Uang Logam
+            </div>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+              {coins.map((coin) => (
+                <button
+                  key={coin.value}
+                  onClick={() => handleCoinClick(coin.value)}
+                  style={{
+                    border: selectedCoin === coin.value ? "4px solid #FF6B9D" : "3px solid rgba(0,0,0,0.2)",
+                    borderRadius: 14,
+                    background: "#fff",
+                    padding: 8,
+                    cursor: "pointer",
+                    position: "relative",
+                  }}
+                >
+                  <MoneyVisual money={coin} size="small" animated />
+                  {coinViewed.has(coin.value) && (
+                    <span style={{ position: "absolute", top: -9, right: -9, width: 24, height: 24, borderRadius: "50%", background: "#4CAF50", color: "#fff", border: "2px solid #1B5E20", fontFamily: "Fredoka One, cursive", display: "grid", placeItems: "center" }}>OK</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Complete button */}
-          {viewed.size >= 5 && (
+          {viewedItems >= 7 && (
             <div className="flex justify-center mt-2">
               <button
                 className="game-btn-green animate-pop-in"
                 style={{ padding: "14px 48px", fontSize: "1.3rem" }}
-                onClick={() => onComplete(viewed.size * 100)}
+                onClick={() => {
+                  playSound("correct");
+                  onComplete(viewedItems * 100);
+                }}
               >
-                🎉 Lanjut ke Menu! (+{viewed.size * 100} Poin)
+                Lanjut ke Menu! (+{viewedItems * 100} Poin)
               </button>
             </div>
           )}
@@ -325,6 +469,12 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
         {selected !== null && (
           <div className="flex flex-col gap-3" style={{ width: 240, flexShrink: 0 }}>
             <BillDetailPanel bill={BANKNOTES[selected]} showBack={showingBack.has(selected)} />
+          </div>
+        )}
+
+        {selectedCoinDetail && (
+          <div className="flex flex-col gap-3" style={{ width: 240, flexShrink: 0 }}>
+            <CoinDetailPanel coin={selectedCoinDetail} />
           </div>
         )}
       </div>
@@ -643,6 +793,101 @@ function BillDetailPanel({ bill, showBack }: { bill: typeof BANKNOTES[0]; showBa
           {showBack ? "depan" : "belakang"}
         </span>
         ! 🔄
+      </div>
+    </div>
+  );
+}
+
+function CoinDetailPanel({ coin }: { coin: CoinDetail }) {
+  const rows = [
+    { label: "Pahlawan", value: coin.hero, sub: coin.heroDesc },
+    { label: "Bahan", value: coin.material, sub: `${coin.shape} - sisi ${coin.edge.toLowerCase()}` },
+    { label: "Ukuran", value: coin.diameter, sub: `Tebal ${coin.thickness}` },
+    { label: "Berat", value: coin.weight, sub: `Tahun emisi ${coin.year}` },
+    { label: "Sisi Muka", value: coin.frontDesign },
+    { label: "Sisi Belakang", value: coin.backDesign },
+  ];
+
+  return (
+    <div className="game-card animate-slide-in" style={{ padding: "14px 16px", height: "fit-content" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+        <MoneyVisual money={MONEY_ASSETS.find((money) => money.value === coin.numValue)!} size="medium" animated />
+      </div>
+
+      <div
+        style={{
+          fontFamily: "Fredoka One, cursive",
+          fontSize: "1.45rem",
+          color: coin.bgColor,
+          textAlign: "center",
+          marginBottom: 10,
+        }}
+      >
+        {coin.value}
+      </div>
+
+      {rows.map(({ label, value, sub }) => (
+        <div
+          key={label}
+          style={{
+            background: `${coin.accentColor}55`,
+            border: `2px solid ${coin.bgColor}55`,
+            borderRadius: 10,
+            padding: "6px 10px",
+            marginBottom: 7,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Nunito, sans-serif",
+              fontSize: "0.65rem",
+              fontWeight: 800,
+              color: "#777",
+              letterSpacing: "0.08em",
+              marginBottom: 1,
+            }}
+          >
+            {label.toUpperCase()}
+          </div>
+          <div
+            style={{
+              fontFamily: "Fredoka One, cursive",
+              fontSize: label.includes("Sisi") ? "0.78rem" : "0.88rem",
+              color: "#2D1B69",
+              lineHeight: 1.25,
+            }}
+          >
+            {value}
+          </div>
+          {sub && (
+            <div
+              style={{
+                fontFamily: "Nunito, sans-serif",
+                fontSize: "0.65rem",
+                fontWeight: 700,
+                color: "#777",
+                lineHeight: 1.2,
+                marginTop: 1,
+              }}
+            >
+              {sub}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div
+        style={{
+          textAlign: "center",
+          fontFamily: "Nunito, sans-serif",
+          fontSize: "0.68rem",
+          color: "#777",
+          background: "#f5f5f5",
+          borderRadius: 8,
+          padding: "5px 8px",
+        }}
+      >
+        Sumber: Bank Indonesia - Gambar Uang Rupiah Logam TE {coin.year}
       </div>
     </div>
   );

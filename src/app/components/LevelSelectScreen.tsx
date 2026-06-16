@@ -9,6 +9,7 @@ interface LevelSelectScreenProps {
   musicOn: boolean;
   onToggleMusic: () => void;
   onSelectLevel: (level: 1 | 2 | 3 | 4) => void;
+  onExit: () => void;
 }
 
 const LEVELS = [
@@ -77,6 +78,7 @@ export function LevelSelectScreen({
   musicOn,
   onToggleMusic,
   onSelectLevel,
+  onExit,
 }: LevelSelectScreenProps) {
   return (
     <div
@@ -112,7 +114,6 @@ export function LevelSelectScreen({
           🗺️ Pilih Level Petualangan!
         </div>
 
-        {/* Music toggle */}
         <div className="flex items-center gap-3">
           <div className="hud-badge flex items-center gap-3">
             <span style={{ fontSize: "1.3rem" }}>{musicOn ? "🎵" : "🔇"}</span>
@@ -154,6 +155,13 @@ export function LevelSelectScreen({
               Musik
             </span>
           </div>
+          <button
+            className="game-btn-yellow"
+            onClick={onExit}
+            style={{ padding: "8px 16px", fontSize: "0.9rem" }}
+          >
+            Exit
+          </button>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FloatingClouds, FloatingCoins, Stars } from "./shared/FloatingDecor";
 import { MascotAvatar } from "./shared/Mascot";
+import { playSound } from "../audioManager";
 
 interface WelcomeScreenProps {
   onStart: (name: string, avatar: "boy" | "girl") => void;
@@ -13,6 +14,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const [avatarError, setAvatarError] = useState(false);
 
   const handleStart = () => {
+    playSound("click");
     const trimmed = name.trim();
     let hasError = false;
     if (!trimmed) { setNameError(true); hasError = true; } else setNameError(false);
@@ -91,7 +93,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <AvatarCard
             type="boy"
             selected={avatar === "boy"}
-            onSelect={() => { setAvatar("boy"); setAvatarError(false); }}
+            onSelect={() => { playSound("click"); setAvatar("boy"); setAvatarError(false); }}
             error={avatarError && avatar !== "boy"}
           />
 
@@ -186,7 +188,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <AvatarCard
             type="girl"
             selected={avatar === "girl"}
-            onSelect={() => { setAvatar("girl"); setAvatarError(false); }}
+            onSelect={() => { playSound("click"); setAvatar("girl"); setAvatarError(false); }}
             error={avatarError && avatar !== "girl"}
           />
         </div>

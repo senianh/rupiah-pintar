@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { HeartBar, ScoreCounter, TimerBar } from "./shared/HUDBadge";
 import { MascotWithBubble } from "./shared/Mascot";
 import { ConfettiPieces } from "./shared/FloatingDecor";
+import { playSound } from "../audioManager";
 
 interface KuisRupiahScreenProps {
   avatar: "boy" | "girl";
@@ -95,9 +96,11 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
 
   const handleAnswer = (choiceIdx: number) => {
     if (selected !== null || isGameOver) return;
+    playSound("click", 0.45);
     setSelected(choiceIdx);
 
     if (choiceIdx === question.correct) {
+      playSound("correct");
       const pts = Math.max(50, Math.round(seconds * 3.5));
       setScore((s) => s + pts);
       setAnswerState("correct");
@@ -114,6 +117,7 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         }
       }, 1200);
     } else {
+      playSound("wrong");
       const newLives = lives - 1;
       setLives(newLives);
       setAnswerState("wrong");

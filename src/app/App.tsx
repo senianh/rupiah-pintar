@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { LevelSelectScreen } from "./components/LevelSelectScreen";
 import { MengenalRupiahScreen } from "./components/MengenalRupiahScreen";
@@ -6,6 +6,7 @@ import { TukarUangScreen } from "./components/TukarUangScreen";
 import { KuisRupiahScreen } from "./components/KuisRupiahScreen";
 import { BayarBelanjaScreen } from "./components/BayarBelanjaScreen";
 import { GameOverModal } from "./components/GameOverModal";
+import { playSound, startBackgroundMusic, stopBackgroundMusic } from "./audioManager";
 
 type Screen = "welcome" | "levels" | "mengenal" | "tukar" | "kuis" | "bayar";
 
@@ -19,6 +20,7 @@ interface GameState {
   lastGameType: "win" | "lose";
   currentLevel: 1 | 2 | 3 | 4;
   showGameOver: boolean;
+  playSession: number;
 }
 
 const LEVEL_NAMES: Record<1 | 2 | 3 | 4, string> = {
@@ -40,21 +42,45 @@ export default function App() {
     lastGameType: "win",
     currentLevel: 1,
     showGameOver: false,
+    playSession: 0,
   });
+
+  useEffect(() => {
+    return () => stopBackgroundMusic();
+  }, []);
+
+  useEffect(() => {
+    if (screen === "levels" && game.musicOn) startBackgroundMusic();
+    if (!game.musicOn || screen === "welcome") stopBackgroundMusic();
+  }, [game.musicOn, screen]);
 
   const handleStart = useCallback((name: string, avatar: "boy" | "girl") => {
     setGame((g) => ({ ...g, playerName: name, avatar }));
     setScreen("levels");
+    if (game.musicOn) startBackgroundMusic();
+  }, [game.musicOn]);
+
+  const handleToggleMusic = useCallback(() => {
+    playSound("click", 0.45);
+    setGame((g) => {
+      if (g.musicOn) {
+        stopBackgroundMusic();
+      } else {
+        startBackgroundMusic();
+      }
+      return { ...g, musicOn: !g.musicOn };
+    });
   }, []);
 
   const handleSelectLevel = useCallback((level: 1 | 2 | 3 | 4) => {
+    playSound("click");
     const screenMap: Record<1 | 2 | 3 | 4, Screen> = {
       1: "mengenal",
       2: "tukar",
       3: "kuis",
       4: "bayar",
     };
-    setGame((g) => ({ ...g, currentLevel: level, currentScore: 0 }));
+    setGame((g) => ({ ...g, currentLevel: level, currentScore: 0, playSession: g.playSession + 1 }));
     setScreen(screenMap[level]);
   }, []);
 
@@ -70,18 +96,28 @@ export default function App() {
   }, []);
 
   const handleGameOverPlayAgain = useCallback(() => {
+    playSound("click");
     setGame((g) => ({ ...g, showGameOver: false, currentScore: 0 }));
     handleSelectLevel(game.currentLevel);
   }, [game.currentLevel, handleSelectLevel]);
 
   const handleGameOverExit = useCallback(() => {
+    playSound("click");
     setGame((g) => ({ ...g, showGameOver: false, currentScore: 0 }));
     setScreen("levels");
   }, []);
 
   const handleBack = useCallback(() => {
+    playSound("click");
     setGame((g) => ({ ...g, showGameOver: false }));
     setScreen("levels");
+  }, []);
+
+  const handleExitToWelcome = useCallback(() => {
+    playSound("click");
+    stopBackgroundMusic();
+    setGame((g) => ({ ...g, showGameOver: false, currentScore: 0 }));
+    setScreen("welcome");
   }, []);
 
   return (
@@ -105,13 +141,15 @@ export default function App() {
           avatar={game.avatar}
           highscore={game.highscore}
           musicOn={game.musicOn}
-          onToggleMusic={() => setGame((g) => ({ ...g, musicOn: !g.musicOn }))}
+          onToggleMusic={handleToggleMusic}
           onSelectLevel={handleSelectLevel}
+          onExit={handleExitToWelcome}
         />
       )}
 
       {screen === "mengenal" && (
         <MengenalRupiahScreen
+          key={`mengenal-${game.playSession}`}
           avatar={game.avatar}
           onBack={handleBack}
           onComplete={(score) => handleComplete(score, 3, "win")}
@@ -120,6 +158,7 @@ export default function App() {
 
       {screen === "tukar" && (
         <TukarUangScreen
+          key={`tukar-${game.playSession}`}
           avatar={game.avatar}
           onBack={handleBack}
           onComplete={(score) => handleComplete(score, score >= 500 ? 3 : 2, "win")}
@@ -128,6 +167,7 @@ export default function App() {
 
       {screen === "kuis" && (
         <KuisRupiahScreen
+          key={`kuis-${game.playSession}`}
           avatar={game.avatar}
           onBack={handleBack}
           onGameOver={(score, stars, type) => handleComplete(score, stars, type)}
@@ -136,6 +176,7 @@ export default function App() {
 
       {screen === "bayar" && (
         <BayarBelanjaScreen
+          key={`bayar-${game.playSession}`}
           avatar={game.avatar}
           onBack={handleBack}
           onComplete={(score) => handleComplete(score, score >= 400 ? 3 : 2, "win")}

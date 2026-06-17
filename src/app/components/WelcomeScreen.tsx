@@ -178,7 +178,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
             {/* Small credits */}
             <p style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.8rem", color: "#fff", opacity: 0.75, fontWeight: 600 }}>
-              Multimedia Final Project © 2025
+              Multimedia Final Project © 2026
             </p>
           </div>
 

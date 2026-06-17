@@ -6,8 +6,9 @@ import { TukarUangScreen } from "./components/TukarUangScreen";
 import { KuisRupiahScreen } from "./components/KuisRupiahScreen";
 import { BayarBelanjaScreen } from "./components/BayarBelanjaScreen";
 import { GameOverModal } from "./components/GameOverModal";
+import { BelajarRupiahScreen } from "./components/BelajarRupiahScreen";
 
-type Screen = "welcome" | "levels" | "mengenal" | "tukar" | "kuis" | "bayar";
+type Screen = "welcome" | "belajar" | "levels" | "mengenal" | "tukar" | "kuis" | "bayar";
 
 interface GameState {
   playerName: string;
@@ -107,6 +108,12 @@ export default function App() {
           musicOn={game.musicOn}
           onToggleMusic={() => setGame((g) => ({ ...g, musicOn: !g.musicOn }))}
           onSelectLevel={handleSelectLevel}
+          onBelajar={() => setScreen("belajar")}
+        />
+      )}
+      {screen === "belajar" && (
+        <BelajarRupiahScreen
+          onBack={() => setScreen("levels")}
         />
       )}
 

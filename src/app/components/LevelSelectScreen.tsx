@@ -9,6 +9,7 @@ interface LevelSelectScreenProps {
   musicOn: boolean;
   onToggleMusic: () => void;
   onSelectLevel: (level: 1 | 2 | 3 | 4) => void;
+  onBelajar: () => void;
 }
 
 const LEVELS = [
@@ -77,6 +78,7 @@ export function LevelSelectScreen({
   musicOn,
   onToggleMusic,
   onSelectLevel,
+  onBelajar,
 }: LevelSelectScreenProps) {
   return (
     <div
@@ -168,6 +170,64 @@ export function LevelSelectScreen({
             maxWidth: 1100,
           }}
         >
+          {/* BELAJAR RUPIAH */}
+          <div
+            onClick={onBelajar}
+            className="cursor-pointer"
+            style={{
+              gridColumn: "1 / span 2",
+              background: "linear-gradient(135deg, #FFD54F 0%, #FFA726 100%)",
+              border: "5px solid #F57C00",
+              borderRadius: 28,
+              boxShadow: "8px 8px 0px #E65100",
+              padding: "24px",
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+            }}
+          >
+            <div
+              style={{
+                width: 90,
+                height: 90,
+                background: "white",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "3rem",
+              }}
+            >
+              📚
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <h2
+                style={{
+                  margin: 0,
+                  color: "white",
+                  fontFamily: "Fredoka One, cursive",
+                }}
+              >
+                Belajar Rupiah Dulu Yuk!
+              </h2>
+
+              <p
+                style={{
+                  marginTop: 8,
+                  color: "white",
+                  fontWeight: 700,
+                }}
+              >
+                Kenali uang kertas dan koin Indonesia sebelum memulai petualangan!
+              </p>
+            </div>
+
+            <div style={{ fontSize: "2rem", color: "white" }}>
+              ▶
+            </div>
+          </div>
+
           {LEVELS.map((level, i) => (
             <LevelCard
               key={level.id}
@@ -178,6 +238,7 @@ export function LevelSelectScreen({
           ))}
         </div>
       </div>
+   
 
       {/* Bottom grass */}
       <div

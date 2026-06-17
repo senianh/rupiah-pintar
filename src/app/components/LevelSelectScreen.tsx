@@ -90,7 +90,6 @@ export function LevelSelectScreen({
       <FloatingClouds />
       <FloatingCoins count={6} />
 
-      {/* TOP HUD */}
       <div
         className="relative z-20 flex items-center justify-between px-8 py-4"
         style={{
@@ -167,7 +166,6 @@ export function LevelSelectScreen({
         </div>
       </div>
 
-      {/* LEVEL GRID */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-12 py-6">
         <div
           style={{
@@ -178,7 +176,7 @@ export function LevelSelectScreen({
             maxWidth: 1300,
           }}
         >
-          {/* BANNER BELAJAR RUPIAH */}
+
           <div
             onClick={onBelajar}
             className="cursor-pointer"
@@ -314,7 +312,6 @@ export function LevelSelectScreen({
             </div>
           </div>
 
-          {/* MAIN GAME LEVELS */}
           {LEVELS.map((level, i) => (
             <LevelCard
               key={level.id}
@@ -326,7 +323,6 @@ export function LevelSelectScreen({
         </div>
       </div>
 
-      {/* BOTTOM GRASS */}
       <div
         className="absolute bottom-0 left-0 right-0 z-0"
         style={{

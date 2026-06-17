@@ -146,7 +146,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
     >
       {showConfetti && <ConfettiPieces />}
 
-      {/* TOP HUD */}
       <div
         className="relative z-20 flex items-center justify-between px-6 py-3"
         style={{
@@ -177,7 +176,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         </div>
       </div>
 
-      {/* Progress bar */}
       <div style={{ height: 6, background: "rgba(255,255,255,0.2)", flexShrink: 0 }}>
         <div
           style={{
@@ -190,16 +188,14 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         />
       </div>
 
-      {/* Main content - jarak dari header lebih besar */}
       <div
         className="relative z-10 flex-1 flex flex-col items-center justify-start px-4 pb-4"
         style={{
-          paddingTop: "clamp(5rem, 6vh, 5.5rem)", // <-- tambahan jarak dari header
+          paddingTop: "clamp(5rem, 6vh, 5.5rem)",
           gap: "clamp(0.75rem, 1.5vh, 1.5rem)",
           overflowY: "auto",
         }}
       >
-        {/* MASCOT - di tengah atas */}
         <div style={{ flexShrink: 0 }}>
           <MascotWithBubble
             avatar={avatar}
@@ -208,10 +204,8 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
           />
         </div>
 
-        {/* SOAL + PILIHAN - di bawah mascot */}
         <div className="flex-1 flex flex-col gap-4 w-full" style={{ maxWidth: 700 }}>
           
-          {/* Question card */}
           <div
             className="animate-slide-up"
             style={{
@@ -248,7 +242,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
             </div>
           </div>
 
-          {/* 2x2 answer grid */}
           <div
             style={{
               display: "grid",
@@ -302,7 +295,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
             })}
           </div>
 
-          {/* Bonus score indicator */}
           <div style={{ textAlign: "center", fontFamily: "Nunito, sans-serif", fontSize: "0.75rem", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
             ⚡ Jawab cepat dapat lebih banyak poin! Maksimal {Math.max(50, Math.round(seconds * 3.5))} poin tersedia
           </div>

@@ -30,12 +30,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         background: "linear-gradient(180deg, #1E90FF 0%, #4FC3F7 30%, #B3E5FC 60%, #E1F5FE 100%)" 
       }}
     >
-      {/* Dekorasi Latar Belakang */}
       <FloatingClouds />
       <Stars count={8} />
       <FloatingCoins count={12} />
 
-      {/* Rumput Bawah */}
       <div
         className="absolute bottom-0 left-0 right-0"
         style={{
@@ -45,7 +43,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           zIndex: 1,
         }}
       >
-        {/* Bunga-bunga Dekoratif */}
         {["8%", "20%", "35%", "50%", "65%", "78%", "92%"].map((pos, i) => (
           <div key={i} className="absolute" style={{ bottom: "8px", left: pos }}>
             <span style={{ 
@@ -59,7 +56,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           </div>
         ))}
         
-        {/* Semak-semak Kecil */}
         {["5%", "30%", "55%", "80%"].map((pos, i) => (
           <div key={`bush-${i}`} className="absolute" style={{ bottom: "2px", left: pos }}>
             <span style={{ fontSize: "2rem", opacity: 0.7 }}>🌿</span>
@@ -67,10 +63,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         ))}
       </div>
 
-      {/* Konten Utama */}
       <div className="relative z-10 flex flex-col items-center gap-4 w-full max-w-6xl px-4 md:px-8">
-
-        {/* Logo Game */}
         <div
           className="animate-float-slow text-center"
           style={{
@@ -85,8 +78,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         >
           💰 RUPIAH PINTAR 💰
         </div>
-        
-        {/* Subtitle */}
+
         <div
           style={{
             fontFamily: "Fredoka One, cursive",
@@ -105,7 +97,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           🎓 Belajar Uang Rupiah Seru & Menyenangkan! 🎓
         </div>
 
-        {/* Card Utama - Avatar Selection + Input */}
         <div 
           className="w-full max-w-4xl mt-2"
           style={{
@@ -117,7 +108,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             backdropFilter: "blur(8px)",
           }}
         >
-          {/* Judul Card */}
           <div className="text-center mb-6">
             <h3 style={{
               fontFamily: "Fredoka One, cursive",
@@ -137,10 +127,8 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             </p>
           </div>
 
-          {/* Row Avatar + Input */}
           <div className="flex flex-col md:flex-row items-center gap-6 justify-center">
-            
-            {/* Avatar Selection - Boy & Girl */}
+
             <div className="flex gap-4 flex-shrink-0">
               <AvatarCard
                 type="boy"
@@ -156,7 +144,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               />
             </div>
 
-            {/* Divider */}
             <div style={{ 
               width: "2px", 
               height: "120px", 
@@ -164,7 +151,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               flexShrink: 0,
             }} className="hidden md:block" />
 
-            {/* Input Nama & Tombol Start */}
             <div className="flex-1 min-w-[200px] w-full md:w-auto">
               <div style={{ marginBottom: 12 }}>
                 <label
@@ -245,7 +231,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                 </p>
               )}
 
-              {/* Tombol Start */}
               <button
                 className="game-btn-yellow animate-pulse-glow"
                 onClick={handleStart}
@@ -264,7 +249,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           </div>
         </div>
 
-        {/* Footer Credit */}
+
         <p style={{ 
           fontFamily: "Nunito, sans-serif", 
           fontSize: "0.75rem", 
@@ -281,7 +266,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   );
 }
 
-// ============ KOMPONEN AVATAR CARD ============
+
 interface AvatarCardProps {
   type: "boy" | "girl";
   selected: boolean;
@@ -323,7 +308,6 @@ function AvatarCard({ type, selected, onSelect, error }: AvatarCardProps) {
         position: "relative",
       }}
     >
-      {/* Badge "Terpilih" */}
       {isSelected && (
         <div
           style={{
@@ -344,10 +328,8 @@ function AvatarCard({ type, selected, onSelect, error }: AvatarCardProps) {
         </div>
       )}
       
-      {/* Avatar */}
       <MascotAvatar avatar={type} size={80} animate={isSelected} />
       
-      {/* Label */}
       <div
         style={{
           fontFamily: "Fredoka One, cursive",
@@ -359,7 +341,6 @@ function AvatarCard({ type, selected, onSelect, error }: AvatarCardProps) {
         {isBoy ? "👦 Laki-laki" : "👧 Perempuan"}
       </div>
       
-      {/* Indikator Status */}
       <div style={{
         width: 10,
         height: 10,
@@ -371,7 +352,6 @@ function AvatarCard({ type, selected, onSelect, error }: AvatarCardProps) {
   );
 }
 
-// ============ KOMPONEN DEKORASI UANG ============
 function SmallBillDecor({ value, index }: { value: string; index: number }) {
   const colors = [
     { bg: "#2E7D32", text: "#E8F5E9", border: "#1B5E20" },

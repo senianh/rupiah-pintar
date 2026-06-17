@@ -13,10 +13,8 @@ export function BelajarRupiahScreen({ onBack }: Props) {
           "linear-gradient(180deg, #1E90FF 0%, #87CEEB 40%, #C1E8FF 100%)",
       }}
     >
-      {/* Awan Animasi di Latar Belakang */}
       <FloatingClouds />
 
-      {/* Header Utama */}
       <div
         className="relative z-20 flex items-center justify-between px-6 py-3"
         style={{
@@ -49,9 +47,7 @@ export function BelajarRupiahScreen({ onBack }: Props) {
         <div style={{ width: 110 }} className="hidden md:block" />
       </div>
 
-      {/* Konten Utama Container */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 gap-6 overflow-y-auto">
-        {/* Frame Video dengan Style Kartun/Game */}
         <div
           className="game-card animate-pop-in shadow-2xl"
           style={{
@@ -80,7 +76,6 @@ export function BelajarRupiahScreen({ onBack }: Props) {
           />
         </div>
 
-        {/* Tombol Aksi Bawah */}
         <button
           onClick={onBack}
           className="game-btn-green animate-pop-in"

@@ -11,7 +11,6 @@ interface MengenalRupiahScreenProps {
   onComplete: (score: number) => void;
 }
 
-// Accurate TE 2022 data sourced from Bank Indonesia (bi.go.id)
 const BANKNOTES = [
   {
     value: "Rp 1.000",
@@ -302,7 +301,6 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
     >
       <FloatingClouds />
 
-      {/* Header */}
       <div
         className="relative z-20 flex items-center justify-between px-4 md:px-6 py-3 flex-wrap gap-2"
         style={{
@@ -368,9 +366,7 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 flex flex-col gap-2 px-3 md:px-6 py-3 overflow-hidden">
-        {/* Mascot */}
         <div className="flex-shrink-0 flex items-center justify-center gap-4" style={{ minHeight: 100 }}>
           <MascotWithBubble
             avatar={avatar}
@@ -380,10 +376,8 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
           />
         </div>
 
-        {/* Uang Kertas + Logam + Detail */}
         <div className="flex-1 flex flex-row gap-3 min-h-0">
           <div className="flex-1 flex flex-col gap-2 min-h-0">
-            {/* Label Uang Kertas */}
             <div style={{ 
               fontFamily: "Fredoka One, cursive", 
               fontSize: "0.75rem", 
@@ -398,7 +392,6 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
               💵 Uang Kertas
             </div>
 
-            {/* Grid Uang Kertas - 4 kolom tetap, tinggi dibatasi */}
             <div
               style={{
                 display: "grid",
@@ -406,7 +399,7 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
                 gridTemplateRows: "1fr 1fr",
                 gap: 5,
                 minHeight: 0,
-                maxHeight: "64%", // <-- Dikecilkan tinggi maksimum
+                maxHeight: "64%", 
                 flexShrink: 1,
               }}
             >
@@ -428,7 +421,6 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
                 ))}
             </div>
 
-            {/* Uang Logam */}
             <div
               style={{
                 background: "rgba(255,255,255,0.92)",
@@ -480,7 +472,6 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
             </div>
           </div>
 
-          {/* Detail Panel */}
           <div className="flex flex-col gap-2" style={{ width: 220, flexShrink: 0, maxHeight: "100%" }}>
             {(selected !== null || selectedCoinDetail) ? (
               <>
@@ -532,7 +523,6 @@ export function MengenalRupiahScreen({ avatar, onBack, onComplete }: MengenalRup
   );
 }
 
-// BanknoteCard - ukuran seragam karena grid cell yang seragam
 interface BanknoteCardProps {
   bill: typeof BANKNOTES[0];
   index: number;
@@ -679,7 +669,6 @@ function BanknoteCard({
   );
 }
 
-// BillDetailPanel (teks lebih besar)
 function BillDetailPanel({ bill, showBack }: { bill: typeof BANKNOTES[0]; showBack: boolean }) {
   const details = showBack
     ? [
@@ -795,7 +784,6 @@ function BillDetailPanel({ bill, showBack }: { bill: typeof BANKNOTES[0]; showBa
   );
 }
 
-// CoinDetailPanel (teks lebih besar)
 function CoinDetailPanel({ coin }: { coin: CoinDetail }) {
   const rows = [
     { label: "Pahlawan", value: coin.hero, sub: coin.heroDesc },

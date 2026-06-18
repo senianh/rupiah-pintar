@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { HeartBar, ScoreCounter, TimerBar } from "./shared/HUDBadge";
 import { MascotWithBubble } from "./shared/Mascot";
 import { ConfettiPieces } from "./shared/FloatingDecor";
+import { playSound } from "../audioManager";
 
 interface KuisRupiahScreenProps {
   avatar: "boy" | "girl";
@@ -95,9 +96,11 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
 
   const handleAnswer = (choiceIdx: number) => {
     if (selected !== null || isGameOver) return;
+    playSound("click", 0.45);
     setSelected(choiceIdx);
 
     if (choiceIdx === question.correct) {
+      playSound("correct");
       const pts = Math.max(50, Math.round(seconds * 3.5));
       setScore((s) => s + pts);
       setAnswerState("correct");
@@ -114,6 +117,7 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         }
       }, 1200);
     } else {
+      playSound("wrong");
       const newLives = lives - 1;
       setLives(newLives);
       setAnswerState("wrong");
@@ -142,7 +146,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
     >
       {showConfetti && <ConfettiPieces />}
 
-      {/* TOP HUD */}
       <div
         className="relative z-20 flex items-center justify-between px-6 py-3"
         style={{
@@ -173,7 +176,6 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         </div>
       </div>
 
-      {/* Progress bar */}
       <div style={{ height: 6, background: "rgba(255,255,255,0.2)", flexShrink: 0 }}>
         <div
           style={{
@@ -186,50 +188,51 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
         />
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-8 py-4 gap-8">
-
-        {/* LEFT: Mascot */}
-        <div style={{ flexShrink: 0, alignSelf: "flex-end" }}>
+      <div
+        className="relative z-10 flex-1 flex flex-col items-center justify-start px-4 pb-4"
+        style={{
+          paddingTop: "clamp(5rem, 6vh, 5.5rem)",
+          gap: "clamp(0.75rem, 1.5vh, 1.5rem)",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ flexShrink: 0 }}>
           <MascotWithBubble
             avatar={avatar}
             bubbleText={mascotMsg}
-            mascotSize={110}
+            mascotSize={90}
           />
         </div>
 
-        {/* CENTER: Question + Choices */}
-        <div className="flex-1 flex flex-col gap-5" style={{ maxWidth: 700 }}>
-
-          {/* Question card - chalkboard style */}
+        <div className="flex-1 flex flex-col gap-4 w-full" style={{ maxWidth: 700 }}>
+          
           <div
             className="animate-slide-up"
             style={{
               background: "linear-gradient(135deg, #1B1B1B 0%, #2D2D2D 100%)",
               border: "5px solid #555",
               borderRadius: 24,
-              padding: "clamp(16px, 2.5vw, 28px)",
+              padding: "clamp(14px, 2vw, 24px)",
               boxShadow: "6px 6px 0 rgba(0,0,0,0.5), inset 0 0 40px rgba(255,255,255,0.03)",
               position: "relative",
               overflow: "hidden",
             }}
           >
-            {/* Chalk texture lines */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.03) 28px, rgba(255,255,255,0.03) 29px)", borderRadius: "inherit", pointerEvents: "none" }} />
 
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 16, position: "relative" }}>
-              <div style={{ fontSize: "clamp(2rem, 4vw, 3rem)", flexShrink: 0 }}>{question.emoji}</div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, position: "relative" }}>
+              <div style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", flexShrink: 0 }}>{question.emoji}</div>
               <div>
-                <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.75rem", fontWeight: 800, color: "#888", letterSpacing: "0.1em", marginBottom: 6 }}>
+                <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.7rem", fontWeight: 800, color: "#888", letterSpacing: "0.1em", marginBottom: 4 }}>
                   PERTANYAAN {(qIdx % QUESTIONS.length) + 1}
                 </div>
                 <p
                   style={{
                     fontFamily: "'Nunito', sans-serif",
-                    fontSize: "clamp(1rem, 2vw, 1.3rem)",
+                    fontSize: "clamp(0.95rem, 1.6vw, 1.2rem)",
                     fontWeight: 800,
                     color: "#F5F5F5",
-                    lineHeight: 1.6,
+                    lineHeight: 1.5,
                     margin: 0,
                   }}
                 >
@@ -239,12 +242,11 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
             </div>
           </div>
 
-          {/* 2x2 answer grid */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 14,
+              gap: 12,
             }}
           >
             {question.choices.map((choice, ci) => {
@@ -262,11 +264,12 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
                   disabled={selected !== null}
                   style={{
                     animationDelay: `${ci * 0.08}s`,
-                    fontSize: "clamp(1rem, 1.8vw, 1.25rem)",
+                    fontSize: "clamp(0.9rem, 1.5vw, 1.15rem)",
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 8,
                     textAlign: "left" as const,
+                    padding: "12px 16px",
                   }}
                 >
                   <span
@@ -274,13 +277,13 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
                       background: "rgba(255,255,255,0.3)",
                       border: "2px solid rgba(255,255,255,0.5)",
                       borderRadius: "50%",
-                      width: 32,
-                      height: 32,
+                      width: 28,
+                      height: 28,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontFamily: "Fredoka One, cursive",
-                      fontSize: "1rem",
+                      fontSize: "0.9rem",
                       flexShrink: 0,
                     }}
                   >
@@ -292,8 +295,7 @@ export function KuisRupiahScreen({ avatar, onBack, onGameOver }: KuisRupiahScree
             })}
           </div>
 
-          {/* Bonus score indicator */}
-          <div style={{ textAlign: "center", fontFamily: "Nunito, sans-serif", fontSize: "0.85rem", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
+          <div style={{ textAlign: "center", fontFamily: "Nunito, sans-serif", fontSize: "0.75rem", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
             ⚡ Jawab cepat dapat lebih banyak poin! Maksimal {Math.max(50, Math.round(seconds * 3.5))} poin tersedia
           </div>
         </div>

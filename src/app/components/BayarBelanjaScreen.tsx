@@ -1,6 +1,9 @@
-import { useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MascotWithBubble } from "./shared/Mascot";
 import { ConfettiPieces } from "./shared/FloatingDecor";
+import { MoneyVisual } from "./MoneyVisual";
+import { formatRupiah, getMoneyAsset } from "./moneyAssets";
+import { playSound } from "../audioManager";
 
 interface BayarBelanjaScreenProps {
   avatar: "boy" | "girl";
@@ -8,403 +11,225 @@ interface BayarBelanjaScreenProps {
   onComplete: (score: number) => void;
 }
 
-const SHOP_ITEMS = [
-  { name: "Susu UHT 1L", price: 8500, emoji: "🥛", color: "#BBDEFB" },
-  { name: "Roti Tawar", price: 6000, emoji: "🍞", color: "#FFF9C4" },
-  { name: "Mainan Mobil", price: 12000, emoji: "🚗", color: "#FCE4EC" },
-  { name: "Pensil Warna", price: 9500, emoji: "✏️", color: "#E8F5E9" },
-  { name: "Minuman Soda", price: 4500, emoji: "🥤", color: "#F3E5F5" },
+const WALLET_VALUES = [
+  { value: 100, count: 5 },
+  { value: 200, count: 5 },
+  { value: 500, count: 8 },
+  { value: 1000, count: 6 },
+  { value: 2000, count: 5 },
+  { value: 5000, count: 5 },
+  { value: 10000, count: 4 },
+  { value: 20000, count: 3 },
+  { value: 50000, count: 2 },
+  { value: 100000, count: 1 },
 ];
 
-const WALLET_BILLS = [
-  { value: 1000, label: "Rp 1.000", bg: "#C62828", text: "#FFCDD2", count: 5 },
-  { value: 2000, label: "Rp 2.000", bg: "#546E7A", text: "#CFD8DC", count: 3 },
-  { value: 5000, label: "Rp 5.000", bg: "#5D4037", text: "#D7CCC8", count: 4 },
-  { value: 10000, label: "Rp 10.000", bg: "#6A1B9A", text: "#E1BEE7", count: 3 },
-  { value: 20000, label: "Rp 20.000", bg: "#2E7D32", text: "#C8E6C9", count: 3 },
-  { value: 50000, label: "Rp 50.000", bg: "#1565C0", text: "#BBDEFB", count: 2 },
+const CUSTOMERS = [
+  {
+    name: "Siti",
+    items: [
+      { name: "Susu UHT", price: 8500, icon: "S", color: "#BBDEFB" },
+      { name: "Roti Tawar", price: 6000, icon: "R", color: "#FFF9C4" },
+    ],
+  },
+  {
+    name: "Bima",
+    items: [
+      { name: "Pensil Warna", price: 9500, icon: "P", color: "#E8F5E9" },
+      { name: "Penghapus", price: 2500, icon: "H", color: "#F3E5F5" },
+      { name: "Buku Tulis", price: 7000, icon: "B", color: "#E0F7FA" },
+    ],
+  },
+  {
+    name: "Rani",
+    items: [
+      { name: "Air Mineral", price: 3500, icon: "A", color: "#E3F2FD" },
+      { name: "Biskuit", price: 12500, icon: "K", color: "#FFE0B2" },
+      { name: "Apel", price: 8000, icon: "A", color: "#FFCDD2" },
+    ],
+  },
+  {
+    name: "Dika",
+    items: [
+      { name: "Mainan Mobil", price: 12000, icon: "M", color: "#FCE4EC" },
+      { name: "Jus Jeruk", price: 5500, icon: "J", color: "#FFF3E0" },
+      { name: "Permen", price: 1500, icon: "P", color: "#F8BBD0" },
+    ],
+  },
 ];
 
-interface WalletBill {
+interface PaidMoney {
   id: string;
   value: number;
-  label: string;
-  bg: string;
-  text: string;
 }
 
 export function BayarBelanjaScreen({ avatar, onBack, onComplete }: BayarBelanjaScreenProps) {
-  const [cart, setCart] = useState<typeof SHOP_ITEMS>([]);
-  const [walletBills, setWalletBills] = useState<WalletBill[]>([]);
-  const [billCounts, setBillCounts] = useState<Record<number, number>>(
-    Object.fromEntries(WALLET_BILLS.map((b) => [b.value, b.count]))
-  );
+  const [customerIdx, setCustomerIdx] = useState(0);
+  const [paidMoney, setPaidMoney] = useState<PaidMoney[]>([]);
+  const [counts, setCounts] = useState<Record<number, number>>(Object.fromEntries(WALLET_VALUES.map((money) => [money.value, money.count])));
   const [payState, setPayState] = useState<"idle" | "exact" | "change" | "insufficient">("idle");
-  const [changeAmount, setChangeAmount] = useState(0);
   const [score, setScore] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [conveyor, setConveyor] = useState<typeof SHOP_ITEMS>(SHOP_ITEMS.slice(0, 3));
 
-  const cartTotal = cart.reduce((s, item) => s + item.price, 0);
-  const walletTotal = walletBills.reduce((s, b) => s + b.value, 0);
-  const isConveyorEmpty = conveyor.length === 0;
+  const customer = CUSTOMERS[customerIdx];
+  const total = customer.items.reduce((sum, item) => sum + item.price, 0);
+  const paidTotal = paidMoney.reduce((sum, money) => sum + money.value, 0);
+  const change = paidTotal - total;
 
-  const addToCart = (item: typeof SHOP_ITEMS[0]) => {
+  const remainingText = useMemo(() => {
+    if (paidTotal < total) return `Kurang ${formatRupiah(total - paidTotal)}`;
+    if (paidTotal === total) return "Uang pas";
+    return `Kembalian ${formatRupiah(change)}`;
+  }, [change, paidTotal, total]);
+
+  const addMoney = useCallback((value: number) => {
+    if (payState !== "idle" || counts[value] <= 0) return;
+    playSound("money", 0.52);
+    setPaidMoney((current) => [...current, { id: `${value}-${Date.now()}-${current.length}`, value }]);
+    setCounts((current) => ({ ...current, [value]: current[value] - 1 }));
+  }, [counts, payState]);
+
+  const removeLast = () => {
+    if (payState !== "idle" || paidMoney.length === 0) return;
+    playSound("click", 0.45);
+    const last = paidMoney[paidMoney.length - 1];
+    setPaidMoney((current) => current.slice(0, -1));
+    setCounts((current) => ({ ...current, [last.value]: current[last.value] + 1 }));
+  };
+
+  const resetPayment = () => {
     if (payState !== "idle") return;
-    setCart((prev) => [...prev, item]);
+    playSound("click", 0.45);
+    setPaidMoney([]);
+    setCounts(Object.fromEntries(WALLET_VALUES.map((money) => [money.value, money.count])));
   };
 
-  const removeFromCart = (idx: number) => {
-    if (payState !== "idle") return;
-    setCart((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const addBillToWallet = useCallback((bill: typeof WALLET_BILLS[0]) => {
-    if (billCounts[bill.value] <= 0 || payState !== "idle") return;
-    setWalletBills((prev) => [...prev, { id: `${bill.value}-${Date.now()}`, value: bill.value, label: bill.label, bg: bill.bg, text: bill.text }]);
-    setBillCounts((prev) => ({ ...prev, [bill.value]: prev[bill.value] - 1 }));
-  }, [billCounts, payState]);
-
-  const removeBill = () => {
-    if (walletBills.length === 0) return;
-    const last = walletBills[walletBills.length - 1];
-    setWalletBills((prev) => prev.slice(0, -1));
-    setBillCounts((prev) => ({ ...prev, [last.value]: prev[last.value] + 1 }));
-  };
-
-  const handlePay = () => {
-    if (cart.length === 0) return;
-    if (walletTotal < cartTotal) {
+  const pay = () => {
+    if (paidMoney.length === 0) return;
+    if (paidTotal < total) {
+      playSound("wrong");
       setPayState("insufficient");
+      setTimeout(() => setPayState("idle"), 900);
       return;
     }
-    const change = walletTotal - cartTotal;
-    setChangeAmount(change);
-    if (change === 0) {
-      setPayState("exact");
-    } else {
-      setPayState("change");
-    }
-    const pts = 300 + (change === 0 ? 100 : 0) - Math.floor(change / 1000) * 5;
-    setScore((s) => s + Math.max(100, pts));
+
+    const roundScore = Math.max(150, 350 + (paidTotal === total ? 150 : 0) - Math.floor(Math.max(0, change) / 500) * 4);
+    playSound("payment");
+    setScore((current) => current + roundScore);
+    setPayState(paidTotal === total ? "exact" : "change");
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 2000);
+    setTimeout(() => setShowConfetti(false), 1600);
   };
 
-  const handleNextRound = () => {
-    setCart([]);
-    setWalletBills([]);
-    setBillCounts(Object.fromEntries(WALLET_BILLS.map((b) => [b.value, b.count])));
-    setPayState("idle");
-    setChangeAmount(0);
-    const nextItems = SHOP_ITEMS.slice(2, 5);
-    setConveyor(nextItems);
-    if (score > 0) {
-      setTimeout(() => onComplete(score), 100);
+  const nextCustomer = () => {
+    if (customerIdx < CUSTOMERS.length - 1) {
+      playSound("click");
+      setCustomerIdx((idx) => idx + 1);
+      setPaidMoney([]);
+      setCounts(Object.fromEntries(WALLET_VALUES.map((money) => [money.value, money.count])));
+      setPayState("idle");
+    } else {
+      playSound("correct");
+      onComplete(score);
     }
   };
 
   const mascotMsg =
-    payState === "exact" ? "TEPAT SEKALI! Uang pas tanpa kembalian! 🏆" :
-    payState === "change" ? `Kembalian kamu: Rp ${changeAmount.toLocaleString("id-ID")}! 💰` :
-    payState === "insufficient" ? "Uangnya kurang nih! Tambah lagi ya! 😅" :
-    cart.length === 0 ? "Klik barang dari ban berjalan untuk dimasukkan ke keranjang! 🛒" :
-    "Sekarang pilih uang dari dompet untuk membayar! 💳";
+    payState === "exact"
+      ? "Pas sekali! Kamu membayar tanpa kembalian."
+      : payState === "change"
+      ? `Benar, kembaliannya ${formatRupiah(change)}.`
+      : payState === "insufficient"
+      ? "Uangnya masih kurang, pilih pecahan lagi ya."
+      : `Pelanggan ${customer.name} belanja ${formatRupiah(total)}. Bayar dengan uang pas atau lebih.`;
 
   return (
-    <div
-      className="relative w-full h-full flex flex-col overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #1B5E20 0%, #2E7D32 20%, #4CAF50 50%, #A5D6A7 100%)" }}
-    >
+    <div className="relative w-full h-full flex flex-col overflow-hidden" style={{ background: "linear-gradient(180deg, #1B5E20 0%, #388E3C 46%, #A5D6A7 100%)" }}>
       {showConfetti && <ConfettiPieces />}
 
-      {/* Header */}
-      <div
-        className="relative z-20 flex items-center justify-between px-6 py-3"
-        style={{
-          background: "linear-gradient(180deg, rgba(10,40,10,0.95) 0%, rgba(10,40,10,0.7) 100%)",
-          borderBottom: "4px solid #FFD93D",
-          flexShrink: 0,
-        }}
-      >
-        <button className="game-btn-yellow" onClick={onBack} style={{ padding: "8px 20px", fontSize: "1rem" }}>← Kembali</button>
-        <h2 style={{ fontFamily: "Fredoka One, cursive", fontSize: "clamp(1.4rem, 2.8vw, 2rem)", color: "#FFD93D", textShadow: "2px 2px 0 #E65100", margin: 0 }}>
-          🛒 Kasir Supermarket! 🛒
-        </h2>
+      <div className="relative z-20 flex items-center justify-between px-6 py-3" style={{ background: "linear-gradient(180deg, rgba(10,40,10,0.95), rgba(10,40,10,0.72))", borderBottom: "4px solid #FFD93D", flexShrink: 0 }}>
+        <button
+          className="game-btn-yellow"
+          onClick={onBack}
+          style={{ padding: "8px 20px", fontSize: "1rem" }}
+        >
+          ← Kembali
+        </button>
+        <h2 style={{ fontFamily: "Fredoka One, cursive", fontSize: "clamp(1.35rem, 2.8vw, 2rem)", color: "#FFD93D", textShadow: "2px 2px 0 #E65100", margin: 0 }}>Kasir Supermarket</h2>
         <div className="hud-badge">
-          <span style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.1rem", color: "#FFD93D" }}>⭐ {score} Poin</span>
+          <span style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.1rem", color: "#FFD93D" }}>{score} Poin</span>
         </div>
       </div>
 
-      {/* Main split layout */}
       <div className="flex-1 flex gap-5 px-5 py-4 z-10 relative overflow-hidden">
-
-        {/* LEFT 60%: Supermarket side */}
-        <div className="flex flex-col gap-4" style={{ flex: "0 0 60%", overflow: "hidden" }}>
-
-          {/* LED billing screen */}
+        <div className="flex flex-col gap-4" style={{ flex: "0 0 58%", overflow: "hidden" }}>
           <div className="led-screen px-5 py-3 flex items-center justify-between" style={{ flexShrink: 0 }}>
             <div>
               <div style={{ fontSize: "0.7rem", letterSpacing: "0.15em", opacity: 0.7, marginBottom: 2 }}>SUPERMARKET RUPIAH PINTAR</div>
-              <div style={{ fontSize: "0.85rem", opacity: 0.8 }}>
-                {cart.length > 0 ? `${cart.length} item dalam keranjang` : "Kosong — pilih barang dari ban berjalan"}
-              </div>
+              <div style={{ fontSize: "0.95rem", opacity: 0.9 }}>Pelanggan {customerIdx + 1}/{CUSTOMERS.length}: {customer.name}</div>
             </div>
             <div>
               <div style={{ fontSize: "0.7rem", letterSpacing: "0.15em", opacity: 0.7, textAlign: "right" }}>TOTAL BAYAR</div>
-              <div style={{ fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 900, letterSpacing: "0.05em", textAlign: "right" }}>
-                Rp {cartTotal.toLocaleString("id-ID")}
+              <div style={{ fontSize: "clamp(1.55rem, 2.7vw, 2.15rem)", fontWeight: 900, letterSpacing: "0.04em", textAlign: "right" }}>{formatRupiah(total)}</div>
+            </div>
+          </div>
+
+          <div style={{ fontFamily: "Fredoka One, cursive", color: "#fff", textShadow: "1px 1px 0 #1B5E20" }}>Daftar Belanja Pelanggan</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, flexShrink: 0 }}>
+            {customer.items.map((item) => (
+              <div key={item.name} style={{ background: item.color, border: "3px solid rgba(0,0,0,0.25)", borderRadius: 14, padding: "12px 14px", minHeight: 116, boxShadow: "0 5px 0 rgba(0,0,0,0.2)" }}>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#fff", border: "2px solid rgba(0,0,0,0.18)", display: "grid", placeItems: "center", fontFamily: "Fredoka One, cursive", color: "#2D1B69", marginBottom: 8 }}>{item.icon}</div>
+                <div style={{ fontFamily: "Fredoka One, cursive", color: "#2D1B69", fontSize: "0.95rem", lineHeight: 1.2 }}>{item.name}</div>
+                <div style={{ fontFamily: "Fredoka One, cursive", color: "#1565C0", fontSize: "1rem", marginTop: 5 }}>{formatRupiah(item.price)}</div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Conveyor belt */}
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "0.9rem", color: "#fff", textShadow: "1px 1px 0 #1B5E20", marginBottom: 6 }}>
-              🏪 Ban Berjalan — Klik barang untuk ditambah ke keranjang:
-            </div>
-            <div
-              className="conveyor-belt py-3 px-4 flex gap-4 overflow-x-auto"
-              style={{ minHeight: 90 }}
-            >
-              {conveyor.map((item, i) => (
-                <div
-                  key={`${item.name}-${i}`}
-                  onClick={() => addToCart(item)}
-                  className="cursor-pointer"
-                  style={{
-                    background: item.color,
-                    border: "3px solid rgba(0,0,0,0.25)",
-                    borderRadius: 14,
-                    padding: "8px 14px",
-                    textAlign: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-                    transition: "transform 0.15s ease",
-                    animation: `float ${2 + i * 0.3}s ease-in-out ${i * 0.2}s infinite`,
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.08) translateY(-4px)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; }}
-                >
-                  <div style={{ fontSize: "2rem" }}>{item.emoji}</div>
-                  <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "0.8rem", color: "#2D1B69", lineHeight: 1.2 }}>{item.name}</div>
-                  <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "0.9rem", color: "#1565C0" }}>
-                    Rp {item.price.toLocaleString("id-ID")}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Shopping cart */}
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "0.9rem", color: "#fff", textShadow: "1px 1px 0 #1B5E20", marginBottom: 6 }}>
-              🛍️ Keranjang Belanja:
-            </div>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.9)",
-                border: "4px solid #4A148C",
-                borderRadius: 16,
-                padding: "10px 12px",
-                flex: 1,
-                overflowY: "auto",
-                boxShadow: "4px 4px 0 #3D1A78",
-              }}
-            >
-              {cart.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#aaa", fontFamily: "Nunito, sans-serif", fontWeight: 700, paddingTop: 16 }}>
-                  Belum ada barang... Klik dari ban berjalan! 👆
-                </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <div style={{ fontFamily: "Fredoka One, cursive", color: "#fff", textShadow: "1px 1px 0 #1B5E20", marginBottom: 6 }}>Uang yang Dibayarkan</div>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.92)", border: "4px solid #4A148C", borderRadius: 16, boxShadow: "4px 4px 0 #3D1A78", padding: 12, overflowY: "auto", display: "flex", gap: 9, flexWrap: "wrap", alignContent: "flex-start" }}>
+              {paidMoney.length === 0 ? (
+                <div style={{ margin: "auto", color: "#888", fontFamily: "Nunito, sans-serif", fontWeight: 800, textAlign: "center" }}>Pilih uang dari dompet di sebelah kanan.</div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {cart.map((item, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: item.color, borderRadius: 10, padding: "6px 12px", border: "2px solid rgba(0,0,0,0.1)" }}>
-                      <span style={{ fontSize: "1.2rem" }}>{item.emoji}</span>
-                      <span style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.9rem", fontWeight: 700, color: "#2D1B69", flex: 1, paddingLeft: 8 }}>{item.name}</span>
-                      <span style={{ fontFamily: "Fredoka One, cursive", fontSize: "0.95rem", color: "#1565C0" }}>Rp {item.price.toLocaleString("id-ID")}</span>
-                      <button
-                        onClick={() => removeFromCart(i)}
-                        style={{ marginLeft: 8, background: "#FF5252", border: "none", borderRadius: "50%", width: 22, height: 22, color: "#fff", cursor: "pointer", fontSize: "0.7rem", flexShrink: 0 }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                  <div style={{ borderTop: "2px dashed #4A148C", paddingTop: 6, display: "flex", justifyContent: "flex-end" }}>
-                    <span style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.1rem", color: "#4A148C" }}>
-                      TOTAL: Rp {cartTotal.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
+                paidMoney.map((money) => <MoneyVisual key={money.id} money={getMoneyAsset(money.value)} size="small" animated={getMoneyAsset(money.value).kind === "coin"} />)
               )}
             </div>
           </div>
         </div>
 
-        {/* RIGHT 40%: Wallet side */}
-        <div className="flex flex-col gap-4" style={{ flex: "0 0 38%" }}>
+        <div className="flex flex-col gap-4" style={{ flex: "1 1 0", minWidth: 0 }}>
+          <MascotWithBubble avatar={avatar} bubbleText={mascotMsg} mascotSize={76} reverse />
 
-          {/* Mascot */}
-          <MascotWithBubble
-            avatar={avatar}
-            bubbleText={mascotMsg}
-            mascotSize={80}
-            reverse
-          />
-
-          {/* Digital Wallet */}
           <div className="wallet-card flex-1 flex flex-col" style={{ padding: 16, overflow: "hidden" }}>
-            <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.1rem", color: "#FFD93D", textShadow: "1px 1px 0 rgba(0,0,0,0.5)", marginBottom: 8, textAlign: "center" }}>
-              👛 Dompet Digital
+            <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.1rem", color: "#FFD93D", textShadow: "1px 1px 0 rgba(0,0,0,0.5)", marginBottom: 8, textAlign: "center" }}>Dompet Rupiah</div>
+
+            <div style={{ textAlign: "center", marginBottom: 10, background: "rgba(0,0,0,0.24)", borderRadius: 12, padding: "8px 10px" }}>
+              <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.72rem", fontWeight: 800, color: "#ddd" }}>Dibayar</div>
+              <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.45rem", color: paidTotal < total ? "#FFAB91" : paidTotal === total ? "#69F0AE" : "#FFD93D" }}>{formatRupiah(paidTotal)}</div>
+              <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.85rem", fontWeight: 900, color: paidTotal < total ? "#FFAB91" : "#69F0AE" }}>{remainingText}</div>
             </div>
 
-            {/* Bills in wallet */}
-            <div
-              style={{
-                background: "rgba(0,0,0,0.3)",
-                borderRadius: 12,
-                padding: 10,
-                flex: 1,
-                overflowY: "auto",
-                marginBottom: 10,
-                minHeight: 80,
-              }}
-            >
-              {walletBills.length === 0 ? (
-                <div style={{ color: "#ccc", fontFamily: "Nunito, sans-serif", fontWeight: 700, fontSize: "0.85rem", textAlign: "center", paddingTop: 12 }}>
-                  Pilih uang dari bawah untuk dimasukkan ke dompet! ↓
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {walletBills.map((bill, i) => (
-                    <div
-                      key={bill.id}
-                      className="animate-pop-in"
-                      style={{
-                        background: bill.bg,
-                        borderRadius: 8,
-                        padding: "3px 10px",
-                        fontFamily: "Fredoka One, cursive",
-                        fontSize: "0.75rem",
-                        color: bill.text,
-                        border: "2px solid rgba(255,255,255,0.3)",
-                        animationDelay: `${i * 0.04}s`,
-                      }}
-                    >
-                      {bill.label}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, alignContent: "start", paddingRight: 2 }}>
+              {WALLET_VALUES.map(({ value }) => {
+                const money = getMoneyAsset(value);
+                return (
+                  <button key={value} onClick={() => addMoney(value)} disabled={counts[value] <= 0 || payState !== "idle"} style={{ border: "2px solid rgba(255,255,255,0.35)", borderRadius: 10, background: counts[value] <= 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.92)", padding: 5, cursor: counts[value] <= 0 || payState !== "idle" ? "not-allowed" : "pointer", opacity: counts[value] <= 0 ? 0.45 : 1, position: "relative", display: "grid", placeItems: "center" }}>
+                    <MoneyVisual money={money} size="tiny" animated={money.kind === "coin"} />
+                    <span style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#FF6B9D", color: "#fff", border: "1px solid #C2185B", display: "grid", placeItems: "center", fontFamily: "Fredoka One, cursive", fontSize: "0.65rem" }}>{counts[value]}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Wallet total */}
-            <div style={{ textAlign: "center", marginBottom: 8 }}>
-              <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.7rem", fontWeight: 700, color: "#aaa" }}>Uang di Dompet:</div>
-              <div style={{ fontFamily: "Fredoka One, cursive", fontSize: "1.4rem", color: walletTotal < cartTotal ? "#FF8A80" : walletTotal > cartTotal ? "#FFD93D" : "#69F0AE" }}>
-                Rp {walletTotal.toLocaleString("id-ID")}
-              </div>
-              {cartTotal > 0 && (
-                <div style={{ fontFamily: "Nunito, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: walletTotal >= cartTotal ? "#69F0AE" : "#FF8A80" }}>
-                  {walletTotal >= cartTotal
-                    ? walletTotal === cartTotal ? "✅ Pas!" : `💸 Kembalian: Rp ${(walletTotal - cartTotal).toLocaleString("id-ID")}`
-                    : `❌ Kurang: Rp ${(cartTotal - walletTotal).toLocaleString("id-ID")}`
-                  }
-                </div>
-              )}
-            </div>
-
-            {/* Bill selector */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-              {WALLET_BILLS.map((bill) => (
-                <button
-                  key={bill.value}
-                  onClick={() => addBillToWallet(bill)}
-                  disabled={billCounts[bill.value] <= 0}
-                  style={{
-                    background: billCounts[bill.value] <= 0 ? "#555" : bill.bg,
-                    color: bill.text,
-                    border: "2px solid rgba(255,255,255,0.3)",
-                    borderRadius: 8,
-                    padding: "4px 10px",
-                    fontFamily: "Fredoka One, cursive",
-                    fontSize: "0.72rem",
-                    cursor: billCounts[bill.value] <= 0 ? "not-allowed" : "pointer",
-                    opacity: billCounts[bill.value] <= 0 ? 0.4 : 1,
-                    position: "relative",
-                    boxShadow: "0 3px 0 rgba(0,0,0,0.3)",
-                    transition: "transform 0.1s",
-                  }}
-                >
-                  {bill.label}
-                  <span style={{ position: "absolute", top: -6, right: -6, background: "#FF6B9D", borderRadius: "50%", width: 16, height: 16, fontSize: "0.6rem", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "1px solid #C2185B" }}>
-                    {billCounts[bill.value]}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={removeBill}
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.15)",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderRadius: 10,
-                  padding: "6px 0",
-                  fontFamily: "Fredoka One, cursive",
-                  fontSize: "0.8rem",
-                  color: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                ↩ Hapus
-              </button>
-
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button onClick={removeLast} style={{ flex: 1, background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.35)", borderRadius: 10, padding: "7px 0", fontFamily: "Fredoka One, cursive", color: "#fff", cursor: "pointer" }}>Hapus</button>
+              <button onClick={resetPayment} style={{ flex: 1, background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.35)", borderRadius: 10, padding: "7px 0", fontFamily: "Fredoka One, cursive", color: "#fff", cursor: "pointer" }}>Reset</button>
               {payState === "idle" ? (
-                <button
-                  className="game-btn-yellow"
-                  onClick={handlePay}
-                  disabled={cart.length === 0 || walletBills.length === 0}
-                  style={{ flex: 2, padding: "8px 0", fontSize: "1rem", opacity: cart.length === 0 || walletBills.length === 0 ? 0.5 : 1 }}
-                >
-                  💳 Bayar Sekarang!
-                </button>
+                <button className="game-btn-yellow" onClick={pay} disabled={paidMoney.length === 0} style={{ flex: 2, padding: "8px 0", fontSize: "1rem", opacity: paidMoney.length === 0 ? 0.55 : 1 }}>Bayar</button>
               ) : (
-                <button
-                  className="game-btn-green"
-                  onClick={handleNextRound}
-                  style={{ flex: 2, padding: "8px 0", fontSize: "0.95rem" }}
-                >
-                  🎉 Selesai! Lanjut →
-                </button>
+                <button className="game-btn-green" onClick={nextCustomer} style={{ flex: 2, padding: "8px 0", fontSize: "0.95rem" }}>{customerIdx < CUSTOMERS.length - 1 ? "Pelanggan Lanjut" : "Selesai"}</button>
               )}
             </div>
-
-            {/* Payment feedback */}
-            {payState !== "idle" && (
-              <div
-                className="animate-pop-in"
-                style={{
-                  marginTop: 8,
-                  background: payState === "insufficient" ? "rgba(255,82,82,0.3)" : "rgba(76,175,80,0.3)",
-                  border: `2px solid ${payState === "insufficient" ? "#FF5252" : "#4CAF50"}`,
-                  borderRadius: 10,
-                  padding: "8px 12px",
-                  textAlign: "center",
-                  fontFamily: "Fredoka One, cursive",
-                  fontSize: "0.9rem",
-                  color: "#fff",
-                }}
-              >
-                {payState === "exact" && "✅ Uang pas! Tidak ada kembalian! Keren! 🌟"}
-                {payState === "change" && `💰 Kembalian: Rp ${changeAmount.toLocaleString("id-ID")}!`}
-                {payState === "insufficient" && `❌ Uang kurang Rp ${(cartTotal - walletTotal).toLocaleString("id-ID")}!`}
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -193,6 +193,12 @@
   100% { transform: rotateY(360deg); }
 }
 
+@keyframes coin-spin {
+  0% { transform: rotateY(0deg) rotateZ(-4deg); }
+  50% { transform: rotateY(180deg) rotateZ(4deg); }
+  100% { transform: rotateY(360deg) rotateZ(-4deg); }
+}
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 157, 0.4); }
   50% { box-shadow: 0 0 0 16px rgba(255, 107, 157, 0); }

@@ -73,7 +73,6 @@ export function GameOverModal({
     >
       {isWin && <ConfettiPieces />}
 
-      {/* Modal card */}
       <div
         className="animate-pop-in"
         style={{
@@ -88,7 +87,6 @@ export function GameOverModal({
           overflow: "hidden",
         }}
       >
-        {/* Decorative background burst */}
         <div
           style={{
             position: "absolute",
@@ -114,12 +112,10 @@ export function GameOverModal({
           }}
         />
 
-        {/* Mascot */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: -10 }}>
           <MascotAvatar avatar={avatar} size={100} animate />
         </div>
 
-        {/* Banner */}
         <div
           style={{
             background: isWin
@@ -142,7 +138,6 @@ export function GameOverModal({
           {subtitle}
         </div>
 
-        {/* Star rating */}
         <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 20, minHeight: 56 }}>
           {[1, 2, 3].map((s) => (
             <div
@@ -165,7 +160,6 @@ export function GameOverModal({
           ))}
         </div>
 
-        {/* Score panel */}
         {showScore && (
           <div
             className="animate-slide-up"
@@ -189,7 +183,6 @@ export function GameOverModal({
           </div>
         )}
 
-        {/* Action buttons */}
         {showButtons && (
           <div className="flex gap-4 justify-center animate-slide-up">
             <button
@@ -209,7 +202,6 @@ export function GameOverModal({
           </div>
         )}
 
-        {/* Level info badge */}
         <div
           style={{
             position: "absolute",
